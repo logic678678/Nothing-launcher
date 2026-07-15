@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Nothing Launcher</string>
+    <string name="accessibility_desc">Enables swipe-down gestures to expand notifications/control center, and double-tap gestures on empty space to lock the screen.</string>
+</resources>

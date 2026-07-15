@@ -1,0 +1,6 @@
+{
+  "name": "Nothing Launcher",
+  "description": "A minimalist, stable, and battery-efficient launcher inspired by Nothing OS. Featuring monochrome aesthetics, fluid gesture navigation, dynamic circular custom icons, searchable categorized drawer, and beautiful interactive dot-matrix widgets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
