@@ -1,3 +1,5 @@
+<img width="1080" height="2400" alt="Screenshot_2026-07-16-12-32-19-45_f35b3d1e12bac3" src="https://github.com/user-attachments/assets/0451030e-e62a-434d-95de-8d28174a1fc2" />
+<img width="1080" height="2400" alt="Screenshot_2026-07-16-12-29-52-83_f35b3d1e12bac3" src="https://github.com/user-attachments/assets/b2593223-170f-4d55-b930-7656b7eb0109" />
 Nothing Launcher is finally live!
 This started as an experiment built with vibe coding, and it's grown into a launcher I'm genuinely happy to use every day. Since it was built with vibe coding, it's completely free.
 Features
