@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -48,6 +50,7 @@ import com.example.ui.AppModel
 import com.example.ui.LauncherViewModel
 import com.example.ui.NothingAppIcon
 import com.example.ui.theme.LocalAccentColor
+import com.example.ui.theme.LocalAppFont
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -65,11 +68,13 @@ fun AppDrawerScreen(
     val settingsMap by viewModel.settingsMap.collectAsState()
 
     val accentColor = LocalAccentColor.current
+    val appFont = LocalAppFont.current
     val isMonochrome = (settingsMap["monochrome_icons"] ?: "true") == "true"
     val vibrateEnabled = (settingsMap["vibrate_on_scroll"] ?: "true") == "true"
 
     val coroutineScope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
+    val listState = rememberLazyListState()
 
     var longPressedApp by remember { mutableStateOf<AppModel?>(null) }
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -90,7 +95,51 @@ fun AppDrawerScreen(
     val categories = listOf("ALL", "SYSTEM", "SOCIAL", "MEDIA", "UTILITY", "GAMES")
 
     val themeMode = settingsMap["theme_mode"] ?: "oled"
-    val backgroundColor = if (themeMode == "oled") Color(0xFF050505) else Color(0xFF121212)
+    val themeSelector = settingsMap["theme_mode_selector"] ?: "dark"
+    val darkTheme = when (themeSelector) {
+        "light" -> false
+        "auto" -> androidx.compose.foundation.isSystemInDarkTheme()
+        else -> true
+    }
+
+    val backgroundColor = if (darkTheme) {
+        if (themeMode == "oled") Color(0xFF050505) else Color(0xFF121212)
+    } else {
+        Color(0xFFF6F6F6)
+    }
+
+    val textColor = if (darkTheme) Color.White else Color.Black
+    val secondaryTextColor = if (darkTheme) Color.Gray else Color(0xFF555555)
+    val searchBarBg = if (darkTheme) Color.White.copy(alpha = 0.03f) else Color.Black.copy(alpha = 0.03f)
+    val searchBarBorder = if (darkTheme) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.1f)
+    val searchPlaceholderColor = if (darkTheme) Color.White.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.4f)
+    val closeIconTint = if (darkTheme) Color.White else Color.Black
+
+    // Precomputed O(1) map of alphabet chars to the first matching app index for buttery-smooth scrolling
+    val letterIndexMap = remember(filteredApps) {
+        val map = mutableMapOf<String, Int>()
+        if (filteredApps.isNotEmpty()) {
+            map["☆"] = 0
+            
+            val alphabetChars = ('A'..'Z').toList()
+            for (char in alphabetChars) {
+                val idx = filteredApps.indexOfFirst { app ->
+                    val firstChar = app.label.firstOrNull()?.uppercaseChar() ?: ' '
+                    firstChar.isLetter() && firstChar >= char
+                }
+                if (idx != -1) {
+                    map[char.toString()] = idx
+                } else {
+                    val lastLetterIdx = filteredApps.indexOfLast { it.label.firstOrNull()?.isLetter() == true }
+                    map[char.toString()] = if (lastLetterIdx != -1) lastLetterIdx else 0
+                }
+            }
+            
+            val nonLetterIdx = filteredApps.indexOfFirst { !(it.label.firstOrNull()?.isLetter() ?: true) }
+            map["#"] = if (nonLetterIdx != -1) nonLetterIdx else 0
+        }
+        map
+    }
 
     Column(
         modifier = modifier
@@ -104,8 +153,8 @@ fun AppDrawerScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(20.dp))
-                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
+                .background(searchBarBg, RoundedCornerShape(20.dp))
+                .border(1.dp, searchBarBorder, RoundedCornerShape(20.dp))
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -123,9 +172,9 @@ fun AppDrawerScreen(
                 if (searchQuery.isEmpty()) {
                     Text(
                         text = "SEARCH APPLICATIONS...",
-                        color = Color.White.copy(alpha = 0.25f),
+                        color = searchPlaceholderColor,
                         fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -134,9 +183,9 @@ fun AppDrawerScreen(
                     value = searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
                     textStyle = TextStyle(
-                        color = Color.White,
+                        color = textColor,
                         fontSize = 13.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         letterSpacing = 0.5.sp
                     ),
                     cursorBrush = SolidColor(accentColor),
@@ -149,7 +198,7 @@ fun AppDrawerScreen(
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Clear",
-                    tint = Color.White,
+                    tint = closeIconTint,
                     modifier = Modifier
                         .size(18.dp)
                         .clickable { viewModel.setSearchQuery("") }
@@ -172,7 +221,7 @@ fun AppDrawerScreen(
                     .height(38.dp)
                     .border(
                         1.dp, 
-                        Color.White.copy(alpha = 0.1f), 
+                        if (darkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f), 
                         RoundedCornerShape(12.dp)
                     )
             ) {
@@ -189,7 +238,7 @@ fun AppDrawerScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color.White else Color.Transparent)
+                                .background(if (isSelected) textColor else Color.Transparent)
                                 .clickable {
                                     viewModel.setSelectedCategory(cat)
                                     // Reset grid scroll
@@ -199,9 +248,9 @@ fun AppDrawerScreen(
                         ) {
                             Text(
                                 text = cat,
-                                color = if (isSelected) Color.Black else Color.Gray,
+                                color = if (isSelected) { if (darkTheme) Color.Black else Color.White } else secondaryTextColor,
                                 fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -213,13 +262,15 @@ fun AppDrawerScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- 3. App Grid with Side Alphabet Fast Scroller ---
+        // --- 3. App Grid/List with Side Alphabet Fast Scroller ---
         Row(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // Main Grid
+            val isListView = (settingsMap["drawer_list_view"] ?: "false") == "true"
+            
+            // Main Grid/List
             if (filteredApps.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -232,20 +283,20 @@ fun AppDrawerScreen(
                             text = "NO MATCHING APPS",
                             color = accentColor,
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = appFont,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Try refining your query...",
-                            color = Color.Gray,
+                            color = secondaryTextColor,
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = appFont
                         )
                     }
                 }
-            } else {
+            } else if (!isListView) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
                     state = gridState,
@@ -261,9 +312,8 @@ fun AppDrawerScreen(
                         key = { index -> "${filteredApps[index].packageName}/${filteredApps[index].activityName}" }
                     ) { index ->
                         val app = filteredApps[index]
-                        val isPinned = remember(pinnedApps, app.packageName) {
-                            pinnedApps.any { it.packageName == app.packageName }
-                        }
+                        val pinnedPackageNames = remember(pinnedApps) { pinnedApps.map { it.packageName }.toSet() }
+                        val isPinned = pinnedPackageNames.contains(app.packageName)
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -283,7 +333,8 @@ fun AppDrawerScreen(
                                     label = app.label,
                                     isMonochrome = isMonochrome,
                                     context = context,
-                                    size = 54.dp
+                                    size = 54.dp,
+                                    settingsMap = settingsMap
                                 )
                                 if (isPinned) {
                                     Box(
@@ -298,13 +349,55 @@ fun AppDrawerScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = app.label,
-                                color = Color.White,
+                                color = textColor,
                                 fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            } else {
+                // List View Implementation
+                androidx.compose.foundation.lazy.LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 90.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(filteredApps.size) { index ->
+                        val app = filteredApps[index]
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { viewModel.launchApp(context, app) },
+                                    onLongClick = {
+                                        longPressedApp = app
+                                        isDialogVisible = true
+                                    }
+                                )
+                                .padding(vertical = 8.dp)
+                        ) {
+                            NothingAppIcon(
+                                packageName = app.packageName,
+                                label = app.label,
+                                isMonochrome = isMonochrome,
+                                context = context,
+                                size = 40.dp,
+                                settingsMap = settingsMap
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = app.label,
+                                color = textColor,
+                                fontSize = 16.sp,
+                                fontFamily = appFont,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
@@ -336,25 +429,27 @@ fun AppDrawerScreen(
                                     .size(56.dp)
                                     .clip(CircleShape)
                                     .background(accentColor)
-                                    .border(2.dp, Color.White, CircleShape),
+                                    .border(2.dp, if (accentColor == Color.White) Color.Black else Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = letter,
                                     color = if (accentColor == Color.White) Color.Black else Color.White,
                                     fontSize = 24.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Black
                                 )
                             }
                         }
-                    }                    // Alphabet Sidebar
+                    }
+
+                    // Alphabet Sidebar
                     Column(
                         modifier = Modifier
                             .onGloballyPositioned { coords ->
                                 sidebarHeight = coords.size.height
                             }
-                            .background(Color.White.copy(alpha = 0.02f), RoundedCornerShape(12.dp))
+                            .background(textColor.copy(alpha = 0.02f), RoundedCornerShape(12.dp))
                             .padding(horizontal = 6.dp, vertical = 8.dp)
                             .pointerInput(alphabets, filteredApps) {
                                 awaitPointerEventScope {
@@ -378,30 +473,16 @@ fun AppDrawerScreen(
                                                 activeLetter = letter
                                                 lastActiveIndex = letterIndex
 
-                                                val scrollTarget = run {
-                                                    if (letter == "☆") {
-                                                        0
-                                                    } else if (letter == "#") {
-                                                        val idx = filteredApps.indexOfFirst { !(it.label.firstOrNull()?.isLetter() ?: true) }
-                                                        if (idx == -1) 0 else idx
-                                                    } else {
-                                                        val targetChar = letter.uppercase().firstOrNull() ?: 'A'
-                                                        val idx = filteredApps.indexOfFirst { app ->
-                                                            val firstChar = app.label.firstOrNull()?.uppercaseChar() ?: ' '
-                                                            firstChar.isLetter() && firstChar >= targetChar
-                                                        }
-                                                        if (idx == -1) {
-                                                            filteredApps.indexOfLast { it.label.firstOrNull()?.isLetter() == true }.coerceAtLeast(0)
-                                                        } else {
-                                                            idx
-                                                        }
-                                                    }
-                                                }
+                                                val scrollTarget = letterIndexMap[letter] ?: 0
 
                                                 if (scrollTarget != -1) {
                                                     scrollJob?.cancel()
                                                     scrollJob = coroutineScope.launch {
-                                                        gridState.scrollToItem(scrollTarget)
+                                                        if (isListView) {
+                                                            listState.scrollToItem(scrollTarget)
+                                                        } else {
+                                                            gridState.scrollToItem(scrollTarget)
+                                                        }
                                                     }
                                                 }
                                                 if (vibrateEnabled) {
@@ -439,30 +520,16 @@ fun AppDrawerScreen(
                                                         val letter = alphabets[letterIndex]
                                                         activeLetter = letter
 
-                                                        val scrollTarget = run {
-                                                            if (letter == "☆") {
-                                                                0
-                                                            } else if (letter == "#") {
-                                                                val idx = filteredApps.indexOfFirst { !(it.label.firstOrNull()?.isLetter() ?: true) }
-                                                                if (idx == -1) 0 else idx
-                                                            } else {
-                                                                val targetChar = letter.uppercase().firstOrNull() ?: 'A'
-                                                                val idx = filteredApps.indexOfFirst { app ->
-                                                                    val firstChar = app.label.firstOrNull()?.uppercaseChar() ?: ' '
-                                                                    firstChar.isLetter() && firstChar >= targetChar
-                                                                }
-                                                                if (idx == -1) {
-                                                                    filteredApps.indexOfLast { it.label.firstOrNull()?.isLetter() == true }.coerceAtLeast(0)
-                                                                } else {
-                                                                    idx
-                                                                }
-                                                            }
-                                                        }
+                                                        val scrollTarget = letterIndexMap[letter] ?: 0
 
                                                         if (scrollTarget != -1) {
                                                             scrollJob?.cancel()
                                                             scrollJob = coroutineScope.launch {
-                                                                gridState.scrollToItem(scrollTarget)
+                                                                if (isListView) {
+                                                                    listState.scrollToItem(scrollTarget)
+                                                                } else {
+                                                                    gridState.scrollToItem(scrollTarget)
+                                                                }
                                                             }
                                                         }
                                                         if (vibrateEnabled) {
@@ -481,25 +548,35 @@ fun AppDrawerScreen(
                         verticalArrangement = Arrangement.SpaceEvenly,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val activeIndex = if (activeLetter != null) alphabets.indexOf(activeLetter) else -1
+                        val sigma = with(density) { 36.dp.toPx() }
                         alphabets.forEachIndexed { idx, letter ->
-                            val diff = if (activeIndex != -1) kotlin.math.abs(idx - activeIndex) else Int.MAX_VALUE
-                            
-                            val fontSize = if (diff == 0) 15.sp else if (diff == 1) 12.sp else if (diff == 2) 10.sp else 8.sp
-                            val offsetX = if (diff == 0) (-12).dp else if (diff == 1) (-6).dp else if (diff == 2) (-2).dp else 0.dp
-                            val color = if (diff == 0) accentColor else if (diff == 1) Color.White else if (diff == 2) Color.White.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.35f)
-                            val fontWeight = if (diff == 0) FontWeight.ExtraBold else if (diff == 1) FontWeight.Bold else FontWeight.Medium
-
+                            val isCurrentActive = letter == activeLetter
                             Text(
                                 text = letter,
-                                color = color,
-                                fontSize = fontSize,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = fontWeight,
+                                color = if (isCurrentActive) accentColor else textColor,
+                                fontSize = 10.sp,
+                                fontFamily = appFont,
+                                fontWeight = if (isCurrentActive) FontWeight.Bold else FontWeight.Medium,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier
                                     .width(16.dp)
-                                    .offset(x = offsetX)
+                                    .graphicsLayer {
+                                        // Read activeLetterTouchY and activeLetter inside the graphicsLayer lambda.
+                                        // This defers the state-read to the drawing phase, eliminating recompositions!
+                                        val factor = if (activeLetterTouchY != null && activeLetter != null) {
+                                            val touchY = activeLetterTouchY!!
+                                            val letterY = (idx + 0.5f) * (sidebarHeight.toFloat() / alphabets.size)
+                                            val dist = kotlin.math.abs(letterY - touchY)
+                                            kotlin.math.exp(- (dist * dist) / (2 * sigma * sigma)).toFloat()
+                                        } else {
+                                            0f
+                                        }
+
+                                        scaleX = 1f + factor * 0.8f
+                                        scaleY = 1f + factor * 0.8f
+                                        translationX = factor * (-24.dp.toPx())
+                                        alpha = 0.35f + factor * 0.65f
+                                    }
                             )
                         }
                     }
@@ -520,9 +597,9 @@ fun AppDrawerScreen(
             title = {
                 Text(
                     text = app.label.uppercase(),
-                    color = Color.White,
+                    color = textColor,
                     fontSize = 14.sp,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = appFont,
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -540,15 +617,15 @@ fun AppDrawerScreen(
                             }
                             isDialogVisible = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.05f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Filled.PushPin, contentDescription = null, tint = if (isPinned) accentColor else Color.White)
+                        Icon(Icons.Filled.PushPin, contentDescription = null, tint = if (isPinned) accentColor else textColor)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isPinned) "UNPIN FROM HOMESCREEN" else "PIN TO HOMESCREEN",
-                            color = Color.White,
-                            fontFamily = FontFamily.Monospace,
+                            color = textColor,
+                            fontFamily = appFont,
                             fontSize = 12.sp
                         )
                     }
@@ -558,15 +635,15 @@ fun AppDrawerScreen(
                             viewModel.hideApp(app.packageName)
                             isDialogVisible = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.05f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Filled.VisibilityOff, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Filled.VisibilityOff, contentDescription = null, tint = textColor)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "HIDE APPLICATION",
-                            color = Color.White,
-                            fontFamily = FontFamily.Monospace,
+                            color = textColor,
+                            fontFamily = appFont,
                             fontSize = 12.sp
                         )
                     }
@@ -575,10 +652,10 @@ fun AppDrawerScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { isDialogVisible = false }) {
-                    Text("CLOSE", color = Color.Gray, fontFamily = FontFamily.Monospace)
+                    Text("CLOSE", color = secondaryTextColor, fontFamily = appFont)
                 }
             },
-            containerColor = Color(0xFF121212),
+            containerColor = if (darkTheme) Color(0xFF121212) else Color(0xFFFFFFFF),
             shape = RoundedCornerShape(28.dp),
             tonalElevation = 8.dp
         )

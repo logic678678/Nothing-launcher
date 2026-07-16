@@ -20,13 +20,7 @@ val LocalCardTextColor = compositionLocalOf { Color.White }
 val LocalCardSecondaryTextColor = compositionLocalOf { Color.Gray }
 
 fun getAppFontFamily(fontSetting: String?): FontFamily {
-    return when (fontSetting?.lowercase()) {
-        "sans" -> FontFamily.SansSerif
-        "serif" -> FontFamily.Serif
-        "cursive" -> FontFamily.Cursive
-        "default" -> FontFamily.Default
-        else -> FontFamily.Monospace
-    }
+    return FontFamily.Monospace
 }
 
 private val DarkColorScheme =
@@ -54,6 +48,7 @@ fun MyApplicationTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
   // Dynamic color is available on Android 12+
   dynamicColor: Boolean = true,
+  appFont: FontFamily = FontFamily.Monospace,
   content: @Composable () -> Unit,
 ) {
   val colorScheme =
@@ -67,5 +62,9 @@ fun MyApplicationTheme(
       else -> LightColorScheme
     }
 
-  MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+  androidx.compose.runtime.CompositionLocalProvider(
+    LocalAppFont provides appFont
+  ) {
+    MaterialTheme(colorScheme = colorScheme, typography = getTypography(appFont), content = content)
+  }
 }

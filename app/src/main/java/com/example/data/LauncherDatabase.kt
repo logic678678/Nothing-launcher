@@ -42,6 +42,19 @@ interface LauncherDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuickNote(note: QuickNoteEntity)
 
+    // Todo queries
+    @Query("SELECT * FROM todo_items ORDER BY timestamp DESC")
+    fun getTodoItemsFlow(): Flow<List<TodoEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTodoItem(item: TodoEntity)
+
+    @Query("DELETE FROM todo_items WHERE id = :id")
+    suspend fun deleteTodoItem(id: Long)
+
+    @Query("DELETE FROM todo_items WHERE isCompleted = 1")
+    suspend fun clearCompletedTodoItems()
+
     // Settings queries
     @Query("SELECT * FROM launcher_settings")
     fun getAllSettingsFlow(): Flow<List<SettingEntity>>
@@ -58,9 +71,10 @@ interface LauncherDao {
         PinnedAppEntity::class,
         HiddenAppEntity::class,
         QuickNoteEntity::class,
-        SettingEntity::class
+        SettingEntity::class,
+        TodoEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class LauncherDatabase : RoomDatabase() {

@@ -16,7 +16,11 @@ data class MediaState(
     val title: String = "NOTHING PLAYING",
     val artist: String = "No Active Session",
     val isPlaying: Boolean = false,
-    val packageName: String = ""
+    val packageName: String = "",
+    val position: Long = 0L,
+    val duration: Long = 0L,
+    val repeatMode: Int = 0,
+    val shuffleMode: Int = 0
 )
 
 class NothingMediaListenerService : NotificationListenerService() {
@@ -83,6 +87,14 @@ class NothingMediaListenerService : NotificationListenerService() {
             override fun onPlaybackStateChanged(state: PlaybackState?) {
                 updatePlaybackState(controller)
             }
+
+            override fun onExtrasChanged(extras: android.os.Bundle?) {
+                updatePlaybackState(controller)
+            }
+
+            override fun onSessionEvent(event: String, extras: android.os.Bundle?) {
+                updatePlaybackState(controller)
+            }
         }
 
         controller.registerCallback(callback)
@@ -106,18 +118,35 @@ class NothingMediaListenerService : NotificationListenerService() {
         val metadata = controller.metadata
         val title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "UNKNOWN TRACK"
         val artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "UNKNOWN ARTIST"
+        val duration = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
         _mediaState.value = _mediaState.value.copy(
             title = title,
             artist = artist,
-            packageName = controller.packageName
+            packageName = controller.packageName,
+            duration = duration
         )
     }
 
     private fun updatePlaybackState(controller: MediaController) {
         val state = controller.playbackState
         val isPlaying = state != null && state.state == PlaybackState.STATE_PLAYING
+        val position = state?.position ?: 0L
+
+        var repeatMode = 0
+        var shuffleMode = 0
+        try {
+            val controllerClass = android.media.session.MediaController::class.java
+            val getRepeatModeMethod = controllerClass.getMethod("getRepeatMode")
+            val getShuffleModeMethod = controllerClass.getMethod("getShuffleMode")
+            repeatMode = getRepeatModeMethod.invoke(controller) as Int
+            shuffleMode = getShuffleModeMethod.invoke(controller) as Int
+        } catch (ignored: Exception) {}
+
         _mediaState.value = _mediaState.value.copy(
-            isPlaying = isPlaying
+            isPlaying = isPlaying,
+            position = position,
+            repeatMode = repeatMode,
+            shuffleMode = shuffleMode
         )
     }
 
@@ -174,6 +203,36 @@ class NothingMediaListenerService : NotificationListenerService() {
                 activeController?.transportControls?.skipToPrevious()
             } catch (e: Exception) {
                 Log.e("NothingMediaService", "Failed to skip previous", e)
+            }
+        }
+
+        const val REPEAT_MODE_NONE = 0
+        const val REPEAT_MODE_ONE = 1
+        const val REPEAT_MODE_ALL = 2
+        const val SHUFFLE_MODE_NONE = 0
+        const val SHUFFLE_MODE_ALL = 1
+
+        fun setRepeatMode(repeatMode: Int) {
+            try {
+                val controller = activeController ?: return
+                val transportControlsClass = android.media.session.MediaController.TransportControls::class.java
+                val method = transportControlsClass.getMethod("setRepeatMode", Int::class.javaPrimitiveType)
+                method.invoke(controller.transportControls, repeatMode)
+                _mediaState.value = _mediaState.value.copy(repeatMode = repeatMode)
+            } catch (e: Exception) {
+                Log.e("NothingMediaService", "Failed to set repeat mode", e)
+            }
+        }
+
+        fun setShuffleMode(shuffleMode: Int) {
+            try {
+                val controller = activeController ?: return
+                val transportControlsClass = android.media.session.MediaController.TransportControls::class.java
+                val method = transportControlsClass.getMethod("setShuffleMode", Int::class.javaPrimitiveType)
+                method.invoke(controller.transportControls, shuffleMode)
+                _mediaState.value = _mediaState.value.copy(shuffleMode = shuffleMode)
+            } catch (e: Exception) {
+                Log.e("NothingMediaService", "Failed to set shuffle mode", e)
             }
         }
     }

@@ -29,6 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -200,7 +205,7 @@ fun HomeScreen(
     var isMenuVisible by remember { mutableStateOf(false) }
     var widgetToConfigure by remember { mutableStateOf<String?>(null) }
 
-    // Dynamic Visibility and Size states for all 8 widgets
+    // Dynamic Visibility and Size states for all 9 widgets
     val clockVisible = (settingsMap["widget_clock_visible"] ?: "true") == "true"
     val clockSize = settingsMap["widget_clock_size"] ?: "medium"
 
@@ -212,6 +217,9 @@ fun HomeScreen(
 
     val notesVisible = (settingsMap["widget_notes_visible"] ?: "true") == "true"
     val notesSize = settingsMap["widget_notes_size"] ?: "medium"
+
+    val todoVisible = (settingsMap["widget_todo_visible"] ?: "true") == "true"
+    val todoSize = settingsMap["widget_todo_size"] ?: "medium"
 
     val statsVisible = (settingsMap["widget_stats_visible"] ?: "true") == "true"
     val statsSize = settingsMap["widget_stats_size"] ?: "medium"
@@ -225,8 +233,10 @@ fun HomeScreen(
     val fitnessVisible = (settingsMap["widget_fitness_visible"] ?: "false") == "true"
     val fitnessSize = settingsMap["widget_fitness_size"] ?: "medium"
 
+    val todoItems by viewModel.todoItems.collectAsState()
+
     // Custom layout blocks reordering
-    val defaultBlocks = listOf("clock", "weather_quicktoggles", "notes", "stats", "calendar", "music", "fitness")
+    val defaultBlocks = listOf("clock", "weather_quicktoggles", "notes", "todo", "stats", "calendar", "music", "fitness")
     val blocks = remember(settingsMap["widgets_order"]) {
         val orderStr = settingsMap["widgets_order"] ?: ""
         if (orderStr.isBlank()) {
@@ -236,9 +246,103 @@ fun HomeScreen(
         }
     }
 
+    val homeScrollState = rememberScrollState()
+    var touchStartY by remember { mutableStateOf(0f) }
+    var touchStartX by remember { mutableStateOf(0f) }
+    var hasTriggeredSwipe by remember { mutableStateOf(false) }
+
+    val nestedScrollConnection = remember(settingsMap) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (available.y > 15f) {
+                    val swipeDownAction = settingsMap["swipe_down_action"] ?: "notifications"
+                    if (com.example.services.LauncherAccessibilityService.isRunning()) {
+                        if (swipeDownAction == "notifications") {
+                            com.example.services.LauncherAccessibilityService.expandNotifications()
+                        } else {
+                            com.example.services.LauncherAccessibilityService.expandQuickSettings()
+                        }
+                    } else {
+                        try {
+                            val statusBarService = context.getSystemService("statusbar")
+                            val expandMethod = statusBarService.javaClass.getMethod("expandNotificationsPanel")
+                            expandMethod.invoke(statusBarService)
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Enable accessibility for gesture support", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    return Offset(0f, available.y)
+                }
+
+                if (available.y < -15f) {
+                    onSwipeUp()
+                    return Offset(0f, available.y)
+                }
+
+                return Offset.Zero
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .pointerInput(settingsMap, homeScrollState) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull()
+                        if (change != null) {
+                            if (change.pressed) {
+                                val isDown = change.previousPressed.not()
+                                if (isDown) {
+                                    touchStartY = change.position.y
+                                    touchStartX = change.position.x
+                                    hasTriggeredSwipe = false
+                                } else if (!hasTriggeredSwipe) {
+                                    val deltaY = change.position.y - touchStartY
+                                    val deltaX = change.position.x - touchStartX
+                                    
+                                    // Swipe down threshold: > 100 pixels/dots and mostly vertical
+                                    if (deltaY > 100f && kotlin.math.abs(deltaY) > kotlin.math.abs(deltaX) * 1.5f) {
+                                        if (homeScrollState.value == 0) {
+                                            hasTriggeredSwipe = true
+                                            val swipeDownAction = settingsMap["swipe_down_action"] ?: "notifications"
+                                            if (com.example.services.LauncherAccessibilityService.isRunning()) {
+                                                if (swipeDownAction == "notifications") {
+                                                    com.example.services.LauncherAccessibilityService.expandNotifications()
+                                                } else {
+                                                    com.example.services.LauncherAccessibilityService.expandQuickSettings()
+                                                }
+                                            } else {
+                                                try {
+                                                    val statusBarService = context.getSystemService("statusbar")
+                                                    val expandMethod = statusBarService.javaClass.getMethod("expandNotificationsPanel")
+                                                    expandMethod.invoke(statusBarService)
+                                                } catch (e: Exception) {
+                                                    android.widget.Toast.makeText(context, "Enable accessibility for gesture support", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Swipe up threshold: < -100 pixels/dots to open drawer
+                                    if (deltaY < -100f && kotlin.math.abs(deltaY) > kotlin.math.abs(deltaX) * 1.5f) {
+                                        if (homeScrollState.value >= homeScrollState.maxValue) {
+                                            hasTriggeredSwipe = true
+                                            onSwipeUp()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             .pointerInput(settingsMap) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -261,7 +365,8 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
+                .nestedScroll(nestedScrollConnection)
+                .verticalScroll(homeScrollState)
         ) {
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -403,6 +508,20 @@ fun HomeScreen(
                                 savedNote = quickNote,
                                 onSaveNote = { viewModel.saveQuickNote(it) },
                                 onLongClick = { widgetToConfigure = "notes" },
+                                modifier = Modifier.padding(vertical = customPadding.dp)
+                            )
+                        }
+                    }
+                    "todo" -> {
+                        if (todoVisible) {
+                            NothingTodoWidget(
+                                size = todoSize,
+                                heightScale = heightScale,
+                                todoItems = todoItems,
+                                onAddTodo = { viewModel.addTodoItem(it) },
+                                onToggleTodo = { viewModel.toggleTodoItem(it) },
+                                onDeleteTodo = { viewModel.deleteTodoItem(it) },
+                                onLongClick = { widgetToConfigure = "todo" },
                                 modifier = Modifier.padding(vertical = customPadding.dp)
                             )
                         }
@@ -559,7 +678,8 @@ fun HomeScreen(
                                             label = pinnedApp.label,
                                             isMonochrome = isMonochrome,
                                             context = context,
-                                            size = 54.dp
+                                            size = 54.dp,
+                                            settingsMap = settingsMap
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(

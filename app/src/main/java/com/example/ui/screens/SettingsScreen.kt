@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +39,7 @@ import com.example.ui.AppModel
 import com.example.ui.LauncherViewModel
 import com.example.ui.NothingAppIcon
 import com.example.ui.theme.LocalAccentColor
+import com.example.ui.theme.LocalAppFont
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
@@ -61,6 +64,7 @@ fun SettingsScreen(
     val hiddenAppsSet by viewModel.hiddenApps.collectAsState()
 
     val accentColor = LocalAccentColor.current
+    val appFont = LocalAppFont.current
 
     var searchQuery by remember { mutableStateOf("") }
     fun matches(vararg keywords: String): Boolean {
@@ -90,7 +94,7 @@ fun SettingsScreen(
                         text = "LAUNCHER SETTINGS",
                         color = Color.White,
                         fontSize = 14.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     )
@@ -139,7 +143,7 @@ fun SettingsScreen(
                             text = "N",
                             color = Color.White,
                             fontSize = 32.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = appFont,
                             fontWeight = FontWeight.Black
                         )
                     }
@@ -148,7 +152,7 @@ fun SettingsScreen(
                         text = "NOTHING OS STYLED",
                         color = Color.White,
                         fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     )
@@ -156,7 +160,7 @@ fun SettingsScreen(
                         text = "v1.0.0 Stable (Bloat-Free)",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = appFont
                     )
                 }
             }
@@ -187,7 +191,7 @@ fun SettingsScreen(
                                 text = "SEARCH SETTINGS...",
                                 color = Color.White.copy(alpha = 0.25f),
                                 fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -198,7 +202,7 @@ fun SettingsScreen(
                             textStyle = TextStyle(
                                 color = Color.White,
                                 fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 letterSpacing = 0.5.sp
                             ),
                             cursorBrush = SolidColor(Color(0xFFFF3B30)),
@@ -266,7 +270,7 @@ fun SettingsScreen(
                                     text = "SYSTEM INTEGRATION",
                                     color = accentColor,
                                     fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 2.sp
                                 )
@@ -275,7 +279,7 @@ fun SettingsScreen(
                                 text = "Set as Default Launcher",
                                 color = Color.White,
                                 fontSize = 15.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
@@ -283,7 +287,7 @@ fun SettingsScreen(
                                 text = "Tap here to open system settings and configure Nothing Launcher as your permanent default home screen.",
                                 color = Color.LightGray,
                                 fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 lineHeight = 14.sp,
                                 textAlign = TextAlign.Center
                             )
@@ -293,13 +297,71 @@ fun SettingsScreen(
             }
 
             // --- Section: Visual Theme Settings ---
-            if (matches("monochrome", "icons", "hide", "status bar", "theme", "accent", "color", "red", "orange", "green", "blue", "yellow", "purple", "pink", "grey", "white", "background", "aesthetic", "oled", "black", "grey", "dark grey", "visual", "identity")) {
+            if (matches("monochrome", "icons", "hide", "status bar", "theme", "accent", "color", "red", "orange", "green", "blue", "yellow", "purple", "pink", "grey", "white", "background", "aesthetic", "oled", "black", "grey", "dark grey", "visual", "identity", "gesture", "navigation")) {
                 item {
+                    Text(
+                        text = "GESTURE NAVIGATION",
+                        color = Color.Gray,
+                        fontSize = 10.sp,
+                        fontFamily = appFont,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // Toggle Gesture Navigation
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Gesture Navigation",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontFamily = appFont,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Enable swipe left for settings and swipe right for Utility Hub",
+                                        color = Color.Gray,
+                                        fontSize = 10.sp,
+                                        fontFamily = appFont,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                                val gestureNavEnabled = (settingsMap["gesture_navigation_enabled"] ?: "true") == "true"
+                                Switch(
+                                    checked = gestureNavEnabled,
+                                    onCheckedChange = { viewModel.saveSetting("gesture_navigation_enabled", it.toString()) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.Black,
+                                        checkedTrackColor = Color.White,
+                                        uncheckedThumbColor = Color.Gray,
+                                        uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = "VISUAL IDENTITY",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -328,14 +390,14 @@ fun SettingsScreen(
                                         text = "Monochrome Icons",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Converts all apps to high contrast circular glyphs",
                                         color = Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         lineHeight = 14.sp
                                     )
                                 }
@@ -344,6 +406,40 @@ fun SettingsScreen(
                                     onCheckedChange = {
                                         viewModel.saveSetting("monochrome_icons", it.toString())
                                     },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.Black,
+                                        checkedTrackColor = Color.White,
+                                        uncheckedThumbColor = Color.Gray,
+                                        uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                                    )
+                                )
+                            }
+                            // Toggle App Drawer Style (Grid vs List)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "App Drawer Style",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontFamily = appFont,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Switch between grid view and alphabetical list view",
+                                        color = Color.Gray,
+                                        fontSize = 10.sp,
+                                        fontFamily = appFont,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                                val isListView = (settingsMap["drawer_list_view"] ?: "false") == "true"
+                                Switch(
+                                    checked = isListView,
+                                    onCheckedChange = { viewModel.saveSetting("drawer_list_view", it.toString()) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.Black,
                                         checkedTrackColor = Color.White,
@@ -371,14 +467,14 @@ fun SettingsScreen(
                                         text = "Hide Status Bar",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Hides the system status bar for a clean immersive look",
                                         color = Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         lineHeight = 14.sp
                                     )
                                 }
@@ -415,14 +511,14 @@ fun SettingsScreen(
                                         text = "Vibrate on Scroll",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Toggle haptic vibrations when fast-scrolling through letters in the app drawer",
                                         color = Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         lineHeight = 14.sp
                                     )
                                 }
@@ -454,7 +550,7 @@ fun SettingsScreen(
                                     text = "Background Aesthetic",
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Row(
@@ -479,7 +575,7 @@ fun SettingsScreen(
                                             text = "OLED BLACK",
                                             color = if (themeMode == "oled") Color.White else Color.Gray,
                                             fontSize = 11.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -502,7 +598,7 @@ fun SettingsScreen(
                                             text = "DARK GREY",
                                             color = if (themeMode == "grey") Color.White else Color.Gray,
                                             fontSize = 11.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -523,7 +619,7 @@ fun SettingsScreen(
                                     text = "Theme Mode",
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Row(
@@ -550,7 +646,7 @@ fun SettingsScreen(
                                                 text = label,
                                                 color = if (isSelected) Color.White else Color.Gray,
                                                 fontSize = 10.sp,
-                                                fontFamily = FontFamily.Monospace,
+                                                fontFamily = appFont,
                                                 fontWeight = FontWeight.Bold
                                             )
                                         }
@@ -558,68 +654,7 @@ fun SettingsScreen(
                                 }
                             }
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Color.White.copy(alpha = 0.08f))
-                            )
 
-                            // Custom App Fonts
-                            val activeFont = settingsMap["app_font"] ?: "mono"
-                            val fontsList = listOf(
-                                "mono" to "MONOSPACE",
-                                "sans" to "SANS SERIF",
-                                "serif" to "SERIF",
-                                "cursive" to "CURSIVE",
-                                "default" to "SYSTEM"
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "Typography Font Family",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    fontsList.chunked(3).forEach { rowList ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            rowList.forEach { (value, label) ->
-                                                val isSelected = activeFont == value
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .clip(RoundedCornerShape(12.dp))
-                                                        .background(if (isSelected) Color.White.copy(alpha = 0.1f) else Color.Transparent)
-                                                        .border(
-                                                                1.dp,
-                                                                if (isSelected) accentColor else Color.White.copy(alpha = 0.1f),
-                                                                RoundedCornerShape(12.dp)
-                                                        )
-                                                        .clickable { viewModel.saveSetting("app_font", value) }
-                                                        .padding(vertical = 8.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = label,
-                                                        color = if (isSelected) Color.White else Color.Gray,
-                                                        fontSize = 9.sp,
-                                                        fontFamily = FontFamily.Monospace,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-                                                }
-                                            }
-                                            if (rowList.size < 3) {
-                                                Spacer(modifier = Modifier.weight((3 - rowList.size).toFloat()))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
 
                             Box(
                                 modifier = Modifier
@@ -634,14 +669,14 @@ fun SettingsScreen(
                                     text = "Accent Theme Color",
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Choose a striking signature accent color for Nothing OS elements",
                                     color = Color.Gray,
                                     fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     lineHeight = 14.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -700,6 +735,282 @@ fun SettingsScreen(
                 }
             }
 
+            // --- Section: Custom Icon Packs & Adaptive Styling ---
+            if (matches("icon", "pack", "adaptive", "styling", "monochrome", "shape", "color")) {
+                item {
+                    Text(
+                        text = "ICON PACKS & ADAPTIVE STYLING",
+                        color = Color.Gray,
+                        fontSize = 10.sp,
+                        fontFamily = appFont,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Icon Pack Type Selector
+                            val iconPackType = settingsMap["icon_pack_type"] ?: "default"
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "Icon Pack Type",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontFamily = appFont,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Select between standard monochrome, custom adaptive colored plates, or third-party packages",
+                                    color = Color.Gray,
+                                    fontSize = 10.sp,
+                                    fontFamily = appFont,
+                                    lineHeight = 14.sp
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf("default" to "DEFAULT", "adaptive" to "ADAPTIVE", "custom" to "CUSTOM").forEach { (value, label) ->
+                                        val isSelected = iconPackType == value
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(if (isSelected) Color.White.copy(alpha = 0.1f) else Color.Transparent)
+                                                .border(
+                                                    1.dp,
+                                                    if (isSelected) accentColor else Color.White.copy(alpha = 0.1f),
+                                                    RoundedCornerShape(12.dp)
+                                                )
+                                                .clickable { viewModel.saveSetting("icon_pack_type", value) }
+                                                .padding(vertical = 10.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                color = if (isSelected) Color.White else Color.Gray,
+                                                fontSize = 9.sp,
+                                                fontFamily = appFont,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // If Adaptive is selected, show adaptive background and foreground customization
+                            if (iconPackType == "adaptive") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color.White.copy(alpha = 0.08f))
+                                )
+
+                                val adaptiveBg = settingsMap["adaptive_icon_bg"] ?: "white"
+                                val adaptiveFg = settingsMap["adaptive_icon_fg"] ?: "black"
+
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Text(
+                                        text = "Adaptive Color Plate Settings",
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        fontFamily = appFont,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    // Background color select
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "Background Shape Color",
+                                            color = Color.LightGray,
+                                            fontSize = 11.sp,
+                                            fontFamily = appFont
+                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            listOf(
+                                                "none" to "NONE",
+                                                "white" to "WHITE",
+                                                "black" to "BLACK",
+                                                "accent" to "ACCENT",
+                                                "custom_grey" to "GREY"
+                                            ).forEach { (value, label) ->
+                                                val isSelected = adaptiveBg == value
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(if (isSelected) Color.White.copy(alpha = 0.1f) else Color.Transparent)
+                                                        .border(
+                                                            1.dp,
+                                                            if (isSelected) accentColor else Color.White.copy(alpha = 0.05f),
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .clickable { viewModel.saveSetting("adaptive_icon_bg", value) }
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = label,
+                                                        color = if (isSelected) Color.White else Color.Gray,
+                                                        fontSize = 9.sp,
+                                                        fontFamily = appFont
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Foreground color select
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "Logo Silhouette Tint Color",
+                                            color = Color.LightGray,
+                                            fontSize = 11.sp,
+                                            fontFamily = appFont
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            listOf(
+                                                "black" to "BLACK",
+                                                "white" to "WHITE",
+                                                "accent" to "ACCENT"
+                                            ).forEach { (value, label) ->
+                                                val isSelected = adaptiveFg == value
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(if (isSelected) Color.White.copy(alpha = 0.1f) else Color.Transparent)
+                                                        .border(
+                                                            1.dp,
+                                                            if (isSelected) accentColor else Color.White.copy(alpha = 0.05f),
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .clickable { viewModel.saveSetting("adaptive_icon_fg", value) }
+                                                        .padding(vertical = 8.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = label,
+                                                        color = if (isSelected) Color.White else Color.Gray,
+                                                        fontSize = 9.sp,
+                                                        fontFamily = appFont
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // If Custom Icon Pack is selected, show installed icon packs
+                            if (iconPackType == "custom") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color.White.copy(alpha = 0.08f))
+                                )
+
+                                val activeCustomPack = settingsMap["active_custom_icon_pack"] ?: ""
+                                val installedPacks = remember {
+                                    com.example.ui.AppIconProcessor.getInstalledIconPacks(context)
+                                }
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        text = "Select Custom Icon Pack",
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        fontFamily = appFont,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    if (installedPacks.isEmpty()) {
+                                        Text(
+                                            text = "No compatible custom icon packs detected on this device. Install icon packs (e.g., 'Whicons', 'CandyCons') from the Play Store to choose them here.",
+                                            color = Color.Gray,
+                                            fontSize = 10.sp,
+                                            fontFamily = appFont,
+                                            lineHeight = 14.sp,
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            installedPacks.forEach { pack ->
+                                                val isSelected = activeCustomPack == pack.packageName
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(if (isSelected) Color.White.copy(alpha = 0.05f) else Color.Transparent)
+                                                        .border(
+                                                            1.dp,
+                                                            if (isSelected) accentColor else Color.White.copy(alpha = 0.05f),
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .clickable {
+                                                            viewModel.saveSetting("active_custom_icon_pack", pack.packageName)
+                                                        }
+                                                        .padding(12.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Column {
+                                                        Text(
+                                                            text = pack.name,
+                                                            color = Color.White,
+                                                            fontSize = 12.sp,
+                                                            fontFamily = appFont,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                        Text(
+                                                            text = pack.packageName,
+                                                            color = Color.Gray,
+                                                            fontSize = 9.sp,
+                                                            fontFamily = appFont
+                                                        )
+                                                    }
+                                                    RadioButton(
+                                                        selected = isSelected,
+                                                        onClick = {
+                                                            viewModel.saveSetting("active_custom_icon_pack", pack.packageName)
+                                                        },
+                                                        colors = RadioButtonDefaults.colors(
+                                                            selectedColor = accentColor,
+                                                            unselectedColor = Color.Gray
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
             // --- Section: Gesture Controls & Accessibility ---
             if (matches("gesture", "accessibility", "notifications", "control center", "lock", "double tap", "swipe")) {
                 item {
@@ -707,7 +1018,7 @@ fun SettingsScreen(
                         text = "GESTURES & ACCESSIBILITY",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -737,14 +1048,14 @@ fun SettingsScreen(
                                         text = "Accessibility Gestures",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = if (isServiceRunning) "SERVICE IS RUNNING" else "TAP TO SETUP GESTURE ACCESS",
                                         color = if (isServiceRunning) accentColor else Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -768,7 +1079,7 @@ fun SettingsScreen(
                                     Text(
                                         text = if (isServiceRunning) "SETUP" else "ENABLE",
                                         fontSize = 11.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -788,7 +1099,7 @@ fun SettingsScreen(
                                     text = "Swipe Down on Home Screen",
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Row(
@@ -815,7 +1126,7 @@ fun SettingsScreen(
                                                 text = label,
                                                 color = if (isSelected) Color.White else Color.Gray,
                                                 fontSize = 10.sp,
-                                                fontFamily = FontFamily.Monospace,
+                                                fontFamily = appFont,
                                                 fontWeight = FontWeight.Bold
                                             )
                                         }
@@ -841,14 +1152,14 @@ fun SettingsScreen(
                                         text = "Double Tap to Lock Screen",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Locks screen when double tapping empty area of home screen",
                                         color = Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         lineHeight = 14.sp
                                     )
                                 }
@@ -878,7 +1189,7 @@ fun SettingsScreen(
                         text = "WALLPAPER STYLING",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -922,11 +1233,59 @@ fun SettingsScreen(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Use System Wallpaper",
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        fontFamily = appFont,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Render your system wallpaper behind the launcher with blur and dim controls",
+                                        color = Color.Gray,
+                                        fontSize = 10.sp,
+                                        fontFamily = appFont,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Switch(
+                                    checked = wallpaperMode == "system",
+                                    onCheckedChange = { checked ->
+                                        if (checked) {
+                                            viewModel.saveSetting("wallpaper_mode", "system")
+                                        } else {
+                                            viewModel.saveSetting("wallpaper_mode", "oled")
+                                        }
+                                    },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.Black,
+                                        checkedTrackColor = Color.White,
+                                        uncheckedThumbColor = Color.Gray,
+                                        uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                                    )
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Color.White.copy(alpha = 0.08f))
+                            )
+
                             Text(
                                 text = "Wallpaper Source Mode",
                                 color = Color.White,
                                 fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -962,7 +1321,7 @@ fun SettingsScreen(
                                             text = display,
                                             color = if (isSelected) Color.White else Color.Gray,
                                             fontSize = 11.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -983,7 +1342,7 @@ fun SettingsScreen(
                                 ) {
                                     Text(
                                         text = "SELECT WALLPAPER IMAGE",
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.sp
@@ -1008,14 +1367,14 @@ fun SettingsScreen(
                                         text = "Wallpaper Blur",
                                         color = Color.White,
                                         fontSize = 13.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "${wallpaperBlur.toInt()} dp",
                                         color = accentColor,
                                         fontSize = 12.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -1041,14 +1400,14 @@ fun SettingsScreen(
                                         text = "Wallpaper Dim Level",
                                         color = Color.White,
                                         fontSize = 13.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "${(wallpaperDim * 100).toInt()}%",
                                         color = accentColor,
                                         fontSize = 12.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -1074,14 +1433,14 @@ fun SettingsScreen(
                                         text = "Wallpaper Brightness",
                                         color = Color.White,
                                         fontSize = 13.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "${(wallpaperBrightness * 100).toInt()}%",
                                         color = accentColor,
                                         fontSize = 12.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -1108,7 +1467,7 @@ fun SettingsScreen(
                         text = "WIDGET MANAGER",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -1130,7 +1489,7 @@ fun SettingsScreen(
                                 text = "Toggle Active Widgets",
                                 color = Color.White,
                                 fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -1139,7 +1498,7 @@ fun SettingsScreen(
                                 text = "Enable or disable custom-styled Nothing OS widgets to customize your home screen workspace.",
                                 color = Color.Gray,
                                 fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 lineHeight = 14.sp
                             )
 
@@ -1174,14 +1533,14 @@ fun SettingsScreen(
                                             text = label,
                                             color = Color.White,
                                             fontSize = 12.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
                                             text = desc,
                                             color = Color.Gray,
                                             fontSize = 10.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             lineHeight = 13.sp
                                         )
                                     }
@@ -1221,7 +1580,7 @@ fun SettingsScreen(
                         text = "PRIVACY CONTROL",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -1252,7 +1611,7 @@ fun SettingsScreen(
                                         text = "Hidden Applications",
                                         color = Color.White,
                                         fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -1260,7 +1619,7 @@ fun SettingsScreen(
                                     text = "${hiddenAppsModels.size} APPS",
                                     color = accentColor,
                                     fontSize = 11.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -1277,7 +1636,7 @@ fun SettingsScreen(
                                             text = "No hidden apps. You can long-press apps in the drawer or home screen to hide them.",
                                             color = Color.Gray,
                                             fontSize = 11.sp,
-                                            fontFamily = FontFamily.Monospace,
+                                            fontFamily = appFont,
                                             lineHeight = 16.sp,
                                             modifier = Modifier.fillMaxWidth()
                                         )
@@ -1300,14 +1659,15 @@ fun SettingsScreen(
                                                         label = app.label,
                                                         isMonochrome = true,
                                                         context = context,
-                                                        size = 36.dp
+                                                        size = 36.dp,
+                                                        settingsMap = settingsMap
                                                     )
                                                     Spacer(modifier = Modifier.width(10.dp))
                                                     Text(
                                                         text = app.label,
                                                         color = Color.White,
                                                         fontSize = 12.sp,
-                                                        fontFamily = FontFamily.Monospace,
+                                                        fontFamily = appFont,
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
@@ -1317,7 +1677,7 @@ fun SettingsScreen(
                                                     text = "UNHIDE",
                                                     color = accentColor,
                                                     fontSize = 11.sp,
-                                                    fontFamily = FontFamily.Monospace,
+                                                    fontFamily = appFont,
                                                     fontWeight = FontWeight.Bold,
                                                     modifier = Modifier
                                                         .clickable { viewModel.unhideApp(app.packageName) }
@@ -1340,7 +1700,7 @@ fun SettingsScreen(
                         text = "POWER & EFFICIENCY",
                         color = Color.Gray,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = appFont,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -1367,7 +1727,7 @@ fun SettingsScreen(
                                     text = "Ultra Low Footprint Mode",
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = appFont,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -1376,7 +1736,7 @@ fun SettingsScreen(
                                 text = "Nothing Launcher is meticulously crafted to maximize battery endurance and minimize RAM footprint using core OS capabilities:",
                                 color = Color.LightGray,
                                 fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = appFont,
                                 lineHeight = 16.sp
                             )
 
@@ -1392,12 +1752,12 @@ fun SettingsScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(text = "•", color = accentColor, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                                    Text(text = "•", color = accentColor, fontSize = 12.sp, fontFamily = appFont)
                                     Text(
                                         text = tip,
                                         color = Color.Gray,
                                         fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = appFont,
                                         lineHeight = 14.sp
                                     )
                                 }

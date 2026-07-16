@@ -8,6 +8,19 @@ class LauncherRepository(private val launcherDao: LauncherDao) {
     val hiddenApps: Flow<List<HiddenAppEntity>> = launcherDao.getHiddenAppsFlow()
     val quickNote: Flow<QuickNoteEntity?> = launcherDao.getQuickNoteFlow()
     val allSettings: Flow<List<SettingEntity>> = launcherDao.getAllSettingsFlow()
+    val todoItems: Flow<List<TodoEntity>> = launcherDao.getTodoItemsFlow()
+
+    suspend fun saveTodoItem(item: TodoEntity) {
+        launcherDao.insertTodoItem(item)
+    }
+
+    suspend fun deleteTodoItem(id: Long) {
+        launcherDao.deleteTodoItem(id)
+    }
+
+    suspend fun clearCompletedTodoItems() {
+        launcherDao.clearCompletedTodoItems()
+    }
 
     suspend fun pinApp(packageName: String, activityName: String, label: String, orderIndex: Int) {
         launcherDao.insertPinnedApp(

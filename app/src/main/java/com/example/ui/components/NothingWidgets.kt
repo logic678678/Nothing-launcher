@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -51,12 +54,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 import com.example.ui.theme.LocalAccentColor
+import com.example.ui.theme.LocalCardBackgroundColor
+import com.example.ui.theme.LocalCardBorderColor
+import com.example.ui.theme.LocalCardTextColor
+import com.example.ui.theme.LocalCardSecondaryTextColor
 import com.example.services.MediaState
 import com.example.services.NothingMediaListenerService
 import com.example.ui.WeatherState
@@ -284,9 +294,9 @@ fun NothingClockWidget(
                     onLongClick?.invoke() ?: run { showClockCustomizer = true }
                 }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
     ) {
         Column(
             modifier = Modifier
@@ -300,8 +310,8 @@ fun NothingClockWidget(
                     // Digital Dot Matrix
                     DotMatrixText(
                         text = timeString,
-                        dotColor = Color.White,
-                        inactiveDotColor = Color.White.copy(alpha = 0.03f),
+                        dotColor = com.example.ui.theme.LocalCardTextColor.current,
+                        inactiveDotColor = com.example.ui.theme.LocalCardTextColor.current.copy(alpha = 0.03f),
                         dotSize = if (size == "small") 3.2f else 5f,
                         spacing = if (size == "small") 1.2f else 2f
                     )
@@ -312,9 +322,9 @@ fun NothingClockWidget(
                     ) {
                         Text(
                             text = dateString,
-                            color = Color.Gray,
+                            color = com.example.ui.theme.LocalCardSecondaryTextColor.current,
                             fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = com.example.ui.theme.LocalAppFont.current,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
                         )
@@ -322,9 +332,9 @@ fun NothingClockWidget(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = amPmString,
-                                color = if (showSecondsHand) Color(0xFFFF3B30) else Color.White,
+                                color = if (showSecondsHand) Color(0xFFFF3B30) else com.example.ui.theme.LocalCardTextColor.current,
                                 fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -338,9 +348,9 @@ fun NothingClockWidget(
                     ) {
                         Text(
                             text = dateString,
-                            color = Color.White.copy(alpha = 0.4f),
+                            color = com.example.ui.theme.LocalCardTextColor.current.copy(alpha = 0.4f),
                             fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = com.example.ui.theme.LocalAppFont.current,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp,
                             modifier = Modifier.padding(bottom = 6.dp)
@@ -351,34 +361,34 @@ fun NothingClockWidget(
                         ) {
                             Text(
                                 text = timeString.substringBefore(":"),
-                                color = Color.White,
+                                color = com.example.ui.theme.LocalCardTextColor.current,
                                 fontSize = if (size == "small") 36.sp else 64.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = (-2).sp
                             )
                             Text(
                                 text = ":",
-                                color = if (showSecondsHand) Color(0xFFFF3B30) else Color.White,
+                                color = if (showSecondsHand) Color(0xFFFF3B30) else com.example.ui.theme.LocalCardTextColor.current,
                                 fontSize = if (size == "small") 36.sp else 64.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(horizontal = 2.dp)
                             )
                             Text(
                                 text = timeString.substringAfter(":"),
-                                color = Color.White,
+                                color = com.example.ui.theme.LocalCardTextColor.current,
                                 fontSize = if (size == "small") 36.sp else 64.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = (-2).sp
                             )
                             if (!is24Hour) {
                                 Text(
                                     text = " $amPmString",
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = com.example.ui.theme.LocalCardTextColor.current.copy(alpha = 0.5f),
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = com.example.ui.theme.LocalAppFont.current,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(bottom = 12.dp)
                                 )
@@ -387,9 +397,9 @@ fun NothingClockWidget(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "NOTHING OS STYLED",
-                            color = Color.White.copy(alpha = 0.4f),
+                            color = com.example.ui.theme.LocalCardTextColor.current.copy(alpha = 0.4f),
                             fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = com.example.ui.theme.LocalAppFont.current,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
@@ -397,6 +407,8 @@ fun NothingClockWidget(
                 }
                 2 -> {
                     // Analog Clock
+                    val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+                    val cardBgColor = com.example.ui.theme.LocalCardBackgroundColor.current
                     Box(
                         modifier = Modifier.size(if (size == "small") 90.dp else 120.dp),
                         contentAlignment = Alignment.Center
@@ -407,7 +419,7 @@ fun NothingClockWidget(
 
                             // Border circle
                             drawCircle(
-                                color = Color.White.copy(alpha = 0.1f),
+                                color = cardTextColor.copy(alpha = 0.1f),
                                 radius = radius,
                                 style = Stroke(width = 1.dp.toPx())
                             )
@@ -419,7 +431,7 @@ fun NothingClockWidget(
                                 val cx = center.x + (radius - 12.dp.toPx()) * cos(rad).toFloat()
                                 val cy = center.y + (radius - 12.dp.toPx()) * sin(rad).toFloat()
                                 drawCircle(
-                                    color = if (angle == 270 && showSecondsHand) Color(0xFFFF3B30) else Color.White,
+                                    color = if (angle == 270 && showSecondsHand) Color(0xFFFF3B30) else cardTextColor,
                                     radius = dotRadius,
                                     center = Offset(cx, cy)
                                 )
@@ -434,7 +446,7 @@ fun NothingClockWidget(
                             val hourAngle = Math.toRadians((hour * 30 + minute * 0.5 - 90))
                             val hourLength = radius * 0.5f
                             drawLine(
-                                color = Color.White,
+                                color = cardTextColor,
                                 start = center,
                                 end = Offset(
                                     center.x + hourLength * cos(hourAngle).toFloat(),
@@ -448,7 +460,7 @@ fun NothingClockWidget(
                             val minuteAngle = Math.toRadians((minute * 6 - 90).toDouble())
                             val minuteLength = radius * 0.75f
                             drawLine(
-                                color = Color.White,
+                                color = cardTextColor,
                                 start = center,
                                 end = Offset(
                                     center.x + minuteLength * cos(minuteAngle).toFloat(),
@@ -476,11 +488,11 @@ fun NothingClockWidget(
 
                             // Center pin
                             drawCircle(
-                                color = Color.Black,
+                                color = cardBgColor,
                                 radius = 3.dp.toPx()
                             )
                             drawCircle(
-                                color = if (showSecondsHand) Color(0xFFFF3B30) else Color.White,
+                                color = if (showSecondsHand) Color(0xFFFF3B30) else cardTextColor,
                                 radius = 1.5.dp.toPx()
                             )
                         }
@@ -488,9 +500,9 @@ fun NothingClockWidget(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = dateString,
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -720,10 +732,12 @@ fun NothingQuickTogglesWidget(
                 onClick = { /* Primary actions are discrete buttons inside, but tap of container is safe */ },
                 onLongClick = { onLongClick?.invoke() ?: run { showTogglesCustomizer = true } }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
     ) {
+        val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+        val cardSecondaryTextColor = com.example.ui.theme.LocalCardSecondaryTextColor.current
         Row(
             modifier = Modifier
                 .padding(if (size == "small") 8.dp else 16.dp)
@@ -736,8 +750,8 @@ fun NothingQuickTogglesWidget(
                 modifier = Modifier
                     .size(if (size == "small") 56.dp else 80.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.03f))
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                    .background(cardTextColor.copy(alpha = 0.03f))
+                    .border(1.dp, cardTextColor.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 val animatedProgress = remember { Animatable(0f) }
@@ -751,7 +765,7 @@ fun NothingQuickTogglesWidget(
                 Canvas(modifier = Modifier.size(70.dp)) {
                     // Gray Background ring
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.08f),
+                        color = cardTextColor.copy(alpha = 0.08f),
                         style = Stroke(width = 4.dp.toPx())
                     )
 
@@ -763,14 +777,14 @@ fun NothingQuickTogglesWidget(
 
                     val ringColor = when (batteryColorOption) {
                         1 -> Color(0xFFFF3B30) // Always Red
-                        2 -> Color.White // Always White
+                        2 -> cardTextColor // Always Adaptive Text Color
                         else -> {
                             // Standard Auto
-                            if (batteryPercentage < 20) Color(0xFFFF3B30) else Color.White
+                            if (batteryPercentage < 20) Color(0xFFFF3B30) else cardTextColor
                         }
                     }
 
-                    // Pinned White ring
+                    // Pinned White/Adaptive ring
                     drawArc(
                         color = ringColor,
                         startAngle = -90f,
@@ -786,16 +800,16 @@ fun NothingQuickTogglesWidget(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "$batteryPercentage%",
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = com.example.ui.theme.LocalAppFont.current
                     )
                     Text(
                         text = if (batteryStatusText == "CHARGING") "CHRG" else "BAT",
-                        color = Color.Gray,
+                        color = cardSecondaryTextColor,
                         fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         letterSpacing = 1.sp
                     )
                 }
@@ -806,7 +820,7 @@ fun NothingQuickTogglesWidget(
                 modifier = Modifier
                     .width(1.dp)
                     .height(60.dp)
-                    .background(Color.White.copy(alpha = 0.15f))
+                    .background(cardTextColor.copy(alpha = 0.15f))
             )
 
             // Quick Actions List
@@ -818,18 +832,19 @@ fun NothingQuickTogglesWidget(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Torch Toggle Button
+                    val cardBgColor = com.example.ui.theme.LocalCardBackgroundColor.current
                     Box(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(CircleShape)
-                            .background(if (isFlashlightOn) Color.White else Color.White.copy(alpha = 0.05f))
+                            .background(if (isFlashlightOn) cardTextColor else cardTextColor.copy(alpha = 0.05f))
                             .clickable { toggleFlashlight() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = if (isFlashlightOn) Icons.Filled.FlashlightOn else Icons.Outlined.FlashlightOff,
                             contentDescription = "Flashlight",
-                            tint = if (isFlashlightOn) Color.Black else Color.White
+                            tint = if (isFlashlightOn) cardBgColor else cardTextColor
                         )
                     }
 
@@ -843,14 +858,14 @@ fun NothingQuickTogglesWidget(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.05f))
+                            .background(cardTextColor.copy(alpha = 0.05f))
                             .clickable { toggleRinger() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = ringerIcon,
                             contentDescription = "Ringer Mode",
-                            tint = Color.White
+                            tint = cardTextColor
                         )
                     }
                 }
@@ -863,7 +878,7 @@ fun NothingQuickTogglesWidget(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.05f))
+                            .background(cardTextColor.copy(alpha = 0.05f))
                             .clickable {
                                 try {
                                     val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
@@ -879,7 +894,7 @@ fun NothingQuickTogglesWidget(
                         Icon(
                             imageVector = Icons.Filled.Wifi,
                             contentDescription = "Wi-Fi Settings",
-                            tint = Color.White
+                            tint = cardTextColor
                         )
                     }
 
@@ -888,7 +903,7 @@ fun NothingQuickTogglesWidget(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.05f))
+                            .background(cardTextColor.copy(alpha = 0.05f))
                             .clickable {
                                 try {
                                     val intent = Intent(Settings.ACTION_SETTINGS).apply {
@@ -904,7 +919,7 @@ fun NothingQuickTogglesWidget(
                         Icon(
                             imageVector = Icons.Filled.Settings,
                             contentDescription = "System Settings",
-                            tint = Color.White
+                            tint = cardTextColor
                         )
                     }
                 }
@@ -1063,10 +1078,12 @@ fun NothingWeatherWidget(
                 onClick = { if (!hasPermission) onRequestPermission() else onRefresh() },
                 onLongClick = { onLongClick?.invoke() ?: run { showWeatherCustomizer = true } }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
     ) {
+        val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+        val cardSecondaryTextColor = com.example.ui.theme.LocalCardSecondaryTextColor.current
         if (!hasPermission) {
             Box(
                 modifier = Modifier
@@ -1077,9 +1094,9 @@ fun NothingWeatherWidget(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "WEATHER",
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = if (size == "small") 11.sp else 13.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -1088,7 +1105,7 @@ fun NothingWeatherWidget(
                         text = "TAP TO ENABLE GPS",
                         color = accentColor,
                         fontSize = if (size == "small") 8.sp else 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         textAlign = TextAlign.Center
@@ -1110,18 +1127,18 @@ fun NothingWeatherWidget(
                 if (size != "small") {
                     Text(
                         text = currentCity,
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = 14.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = currentCondition,
-                        color = Color.Gray,
+                        color = cardSecondaryTextColor,
                         fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -1130,8 +1147,8 @@ fun NothingWeatherWidget(
                 // Beautiful dot-matrix digital temp
                 DotMatrixText(
                     text = "${currentTemp.toInt()}${unitSuffix}",
-                    dotColor = Color.White,
-                    inactiveDotColor = Color.White.copy(alpha = 0.03f),
+                    dotColor = cardTextColor,
+                    inactiveDotColor = cardTextColor.copy(alpha = 0.03f),
                     dotSize = if (size == "small") 2.5f else 3.5f,
                     spacing = if (size == "small") 1f else 1.5f
                 )
@@ -1142,7 +1159,7 @@ fun NothingWeatherWidget(
                 modifier = Modifier
                     .size(if (size == "small") 48.dp else 76.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.03f)),
+                    .background(cardTextColor.copy(alpha = 0.03f)),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.size(if (size == "small") 36.dp else 60.dp)) {
@@ -1154,7 +1171,7 @@ fun NothingWeatherWidget(
                         "CLEAR" -> {
                             // Circular Dot Matrix Sun
                             drawCircle(
-                                color = Color.White,
+                                color = cardTextColor,
                                 radius = 14.dp.toPx(),
                                 style = Stroke(width = 1.5.dp.toPx())
                             )
@@ -1174,14 +1191,14 @@ fun NothingWeatherWidget(
                             // Flat geometric cloud silhouette using dot lines
                             for (x in 12..48 step 6) {
                                 drawCircle(
-                                    color = Color.White,
+                                    color = cardTextColor,
                                     radius = 6.dp.toPx(),
                                     center = Offset(x.dp.toPx(), 26.dp.toPx())
                                 )
                             }
                             for (x in 18..42 step 6) {
                                 drawCircle(
-                                    color = Color.White,
+                                    color = cardTextColor,
                                     radius = 8.dp.toPx(),
                                     center = Offset(x.dp.toPx(), 22.dp.toPx())
                                 )
@@ -1190,7 +1207,7 @@ fun NothingWeatherWidget(
                         "STORMY" -> {
                             // Storm Cloud + lightning strike line
                             drawCircle(
-                                color = Color.White.copy(alpha = 0.4f),
+                                color = cardTextColor.copy(alpha = 0.4f),
                                 radius = 12.dp.toPx(),
                                 center = Offset(center.x, center.y - 4.dp.toPx())
                             )
@@ -1217,19 +1234,19 @@ fun NothingWeatherWidget(
                         "RAINY" -> {
                             // Cloud and raindrops as circles
                             drawCircle(
-                                color = Color.White,
+                                color = cardTextColor,
                                 radius = 10.dp.toPx(),
                                 center = Offset(center.x, center.y - 6.dp.toPx())
                             )
                             // Drops
-                            drawCircle(color = Color.White, radius = 1.5.dp.toPx(), center = Offset(center.x - 6.dp.toPx(), center.y + 12.dp.toPx()))
-                            drawCircle(color = Color.White, radius = 1.5.dp.toPx(), center = Offset(center.x, center.y + 16.dp.toPx()))
-                            drawCircle(color = Color.White, radius = 1.5.dp.toPx(), center = Offset(center.x + 6.dp.toPx(), center.y + 12.dp.toPx()))
+                            drawCircle(color = cardTextColor, radius = 1.5.dp.toPx(), center = Offset(center.x - 6.dp.toPx(), center.y + 12.dp.toPx()))
+                            drawCircle(color = cardTextColor, radius = 1.5.dp.toPx(), center = Offset(center.x, center.y + 16.dp.toPx()))
+                            drawCircle(color = cardTextColor, radius = 1.5.dp.toPx(), center = Offset(center.x + 6.dp.toPx(), center.y + 12.dp.toPx()))
                         }
                         else -> {
                             // Default clear
                             drawCircle(
-                                color = Color.White,
+                                color = cardTextColor,
                                 radius = 12.dp.toPx(),
                                 center = center
                             )
@@ -1405,10 +1422,12 @@ fun NothingNotesWidget(
                 onClick = {},
                 onLongClick = { onLongClick?.invoke() }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
     ) {
+        val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+        val cardSecondaryTextColor = com.example.ui.theme.LocalCardSecondaryTextColor.current
         Column(
             modifier = Modifier
                 .padding(if (size == "small") 12.dp else 18.dp)
@@ -1421,16 +1440,16 @@ fun NothingNotesWidget(
             ) {
                 Text(
                     text = "QUICK NOTE",
-                    color = Color.Gray,
+                    color = cardSecondaryTextColor,
                     fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = com.example.ui.theme.LocalAppFont.current,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
                 )
                 Icon(
                     imageVector = if (isEditing) Icons.Filled.CheckCircle else Icons.Filled.Edit,
                     contentDescription = "Edit Note",
-                    tint = if (isEditing) Color(0xFFFF3B30) else Color.White,
+                    tint = if (isEditing) Color(0xFFFF3B30) else cardTextColor,
                     modifier = Modifier
                         .size(18.dp)
                         .clickable {
@@ -1450,14 +1469,14 @@ fun NothingNotesWidget(
                     value = textState,
                     onValueChange = { textState = it },
                     textStyle = TextStyle(
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = 14.sp,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = com.example.ui.theme.LocalAppFont.current
                     ),
                     cursorBrush = SolidColor(Color(0xFFFF3B30)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                        .background(cardTextColor.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                         .height(60.dp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -1469,9 +1488,9 @@ fun NothingNotesWidget(
             } else {
                 Text(
                     text = if (textState.isBlank()) "Tap the edit icon to add a quick note..." else textState,
-                    color = if (textState.isBlank()) Color.Gray else Color.White,
+                    color = if (textState.isBlank()) cardSecondaryTextColor else cardTextColor,
                     fontSize = 13.sp,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = com.example.ui.theme.LocalAppFont.current,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 40.dp)
@@ -2023,6 +2042,10 @@ fun NothingMusicWidget(
     modifier: Modifier = Modifier
 ) {
     val accentColor = LocalAccentColor.current
+    val cardBg = LocalCardBackgroundColor.current
+    val cardText = LocalCardTextColor.current
+    val cardSecText = LocalCardSecondaryTextColor.current
+    val cardBorderColor = LocalCardBorderColor.current
     val isPlaying = mediaState.isPlaying && hasPermission
     var rotationAngle by remember { mutableStateOf(0f) }
 
@@ -2031,6 +2054,43 @@ fun NothingMusicWidget(
             while (true) {
                 rotationAngle = (rotationAngle + 2f) % 360f
                 delay(16)
+            }
+        }
+    }
+
+    var playMode by remember { mutableIntStateOf(0) } // 0: Normal, 1: Repeat One, 2: Repeat All, 3: Shuffle
+    
+    // Synchronize playMode with the active system media player state
+    LaunchedEffect(mediaState.repeatMode, mediaState.shuffleMode) {
+        val rep = mediaState.repeatMode
+        val shuf = mediaState.shuffleMode
+        playMode = if (shuf != 0) {
+            3
+        } else {
+            when (rep) {
+                1 -> 1 // REPEAT_MODE_ONE
+                2 -> 2 // REPEAT_MODE_ALL
+                else -> 0
+            }
+        }
+    }
+    var currentPosition by remember(mediaState.position, isPlaying) { mutableLongStateOf(mediaState.position) }
+    val duration = if (mediaState.duration > 0) mediaState.duration else 180000L // 3 minutes fallback
+    
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (true) {
+                delay(500)
+                if (mediaState.duration > 0) {
+                    com.example.services.NothingMediaListenerService.activeController?.playbackState?.let { pbState ->
+                        if (pbState.state == android.media.session.PlaybackState.STATE_PLAYING) {
+                            val timeDiff = System.currentTimeMillis() - pbState.lastPositionUpdateTime
+                            currentPosition = pbState.position + timeDiff
+                        }
+                    }
+                } else {
+                    currentPosition = (currentPosition + 500) % duration
+                }
             }
         }
     }
@@ -2045,9 +2105,9 @@ fun NothingMusicWidget(
                 onClick = { if (!hasPermission) onRequestPermission() },
                 onLongClick = { onLongClick?.invoke() }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, cardBorderColor)
     ) {
         if (!hasPermission) {
             // Permission Prompt Layout (Nothing OS style)
@@ -2060,7 +2120,7 @@ fun NothingMusicWidget(
             ) {
                 Text(
                     text = "MEDIA PLAYER",
-                    color = Color.Gray,
+                    color = cardSecText,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -2069,7 +2129,7 @@ fun NothingMusicWidget(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "ACCESS RESTRICTED",
-                    color = Color.White,
+                    color = cardText,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
@@ -2101,14 +2161,14 @@ fun NothingMusicWidget(
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF1A1A1A))
-                                .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                                .background(cardText.copy(alpha = 0.05f))
+                                .border(1.dp, cardBorderColor, CircleShape)
                                 .rotate(rotationAngle),
                             contentAlignment = Alignment.Center
                         ) {
                             Canvas(modifier = Modifier.fillMaxSize()) {
-                                drawCircle(Color.Black, radius = this.size.minDimension / 2.5f)
-                                drawCircle(Color.Gray.copy(alpha = 0.3f), radius = this.size.minDimension / 3.5f, style = Stroke(width = 1f))
+                                drawCircle(cardBg, radius = this.size.minDimension / 2.5f)
+                                drawCircle(cardSecText.copy(alpha = 0.3f), radius = this.size.minDimension / 3.5f, style = Stroke(width = 1f))
                             }
                             Box(
                                 modifier = Modifier
@@ -2125,7 +2185,7 @@ fun NothingMusicWidget(
                             Icon(
                                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                 contentDescription = "Play/Pause",
-                                tint = Color.White,
+                                tint = cardText,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -2140,7 +2200,7 @@ fun NothingMusicWidget(
                     ) {
                         Text(
                             text = "NOW PLAYING",
-                            color = Color.Gray,
+                            color = cardSecText,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
@@ -2152,8 +2212,8 @@ fun NothingMusicWidget(
                                 .fillMaxWidth()
                                 .height(56.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF0C0C0C))
-                                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
+                                .background(cardText.copy(alpha = 0.03f))
+                                .border(1.dp, cardBorderColor, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
@@ -2165,13 +2225,13 @@ fun NothingMusicWidget(
                                     modifier = Modifier
                                         .size(32.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF1E1E1E))
+                                        .background(cardText.copy(alpha = 0.08f))
                                         .rotate(rotationAngle)
-                                        .border(1.5.dp, Color.White.copy(alpha = 0.15f), CircleShape),
+                                        .border(1.5.dp, cardBorderColor, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Box(modifier = Modifier.size(14.dp, 2.dp).background(Color.White.copy(alpha = 0.4f)))
-                                    Box(modifier = Modifier.size(2.dp, 14.dp).background(Color.White.copy(alpha = 0.4f)))
+                                    Box(modifier = Modifier.size(14.dp, 2.dp).background(cardText.copy(alpha = 0.4f)))
+                                    Box(modifier = Modifier.size(2.dp, 14.dp).background(cardText.copy(alpha = 0.4f)))
                                 }
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2182,20 +2242,20 @@ fun NothingMusicWidget(
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = FontWeight.Black
                                     )
-                                    Text("SIDE A", color = Color.Gray, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                                    Text("SIDE A", color = cardSecText, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
                                 }
 
                                 Box(
                                     modifier = Modifier
                                         .size(32.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF1E1E1E))
+                                        .background(cardText.copy(alpha = 0.08f))
                                         .rotate(rotationAngle)
-                                        .border(1.5.dp, Color.White.copy(alpha = 0.15f), CircleShape),
+                                        .border(1.5.dp, cardBorderColor, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Box(modifier = Modifier.size(14.dp, 2.dp).background(Color.White.copy(alpha = 0.4f)))
-                                    Box(modifier = Modifier.size(2.dp, 14.dp).background(Color.White.copy(alpha = 0.4f)))
+                                    Box(modifier = Modifier.size(14.dp, 2.dp).background(cardText.copy(alpha = 0.4f)))
+                                    Box(modifier = Modifier.size(2.dp, 14.dp).background(cardText.copy(alpha = 0.4f)))
                                 }
                             }
                         }
@@ -2206,17 +2266,56 @@ fun NothingMusicWidget(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = mediaState.title,
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = mediaState.title,
+                                        color = cardText,
+                                        fontSize = 13.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    IconButton(
+                                        onClick = {
+                                            playMode = (playMode + 1) % 4
+                                            try {
+                                                when (playMode) {
+                                                    0 -> {
+                                                        com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_NONE)
+                                                        com.example.services.NothingMediaListenerService.setShuffleMode(com.example.services.NothingMediaListenerService.SHUFFLE_MODE_NONE)
+                                                    }
+                                                    1 -> {
+                                                        com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_ONE)
+                                                    }
+                                                    2 -> {
+                                                        com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_ALL)
+                                                    }
+                                                    3 -> {
+                                                        com.example.services.NothingMediaListenerService.setShuffleMode(com.example.services.NothingMediaListenerService.SHUFFLE_MODE_ALL)
+                                                    }
+                                                }
+                                            } catch (e: Exception) {}
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = when (playMode) {
+                                                1 -> Icons.Filled.RepeatOne
+                                                2 -> Icons.Filled.Repeat
+                                                3 -> Icons.Filled.Shuffle
+                                                else -> Icons.Filled.Repeat
+                                            },
+                                            contentDescription = "Playback Mode",
+                                            tint = if (playMode == 0) cardSecText else accentColor,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = mediaState.artist,
-                                    color = Color.Gray,
+                                    color = cardSecText,
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
                                     maxLines = 1
@@ -2225,23 +2324,23 @@ fun NothingMusicWidget(
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { onPrevious() }) {
-                                    Icon(Icons.Filled.SkipPrevious, null, tint = Color.White)
+                                    Icon(Icons.Filled.SkipPrevious, null, tint = cardText)
                                 }
                                 IconButton(
                                     onClick = { onTogglePlay() },
                                     modifier = Modifier
-                                        .background(Color.White, CircleShape)
+                                        .background(cardText, CircleShape)
                                         .size(36.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                         contentDescription = null,
-                                        tint = Color.Black,
+                                        tint = cardBg,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
                                 IconButton(onClick = { onNext() }) {
-                                    Icon(Icons.Filled.SkipNext, null, tint = Color.White)
+                                    Icon(Icons.Filled.SkipNext, null, tint = cardText)
                                 }
                             }
                         }
@@ -2256,31 +2355,110 @@ fun NothingMusicWidget(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = mediaState.title,
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = mediaState.title,
+                                    color = cardText,
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                IconButton(
+                                    onClick = {
+                                        playMode = (playMode + 1) % 4
+                                        try {
+                                            when (playMode) {
+                                                0 -> {
+                                                    com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_NONE)
+                                                    com.example.services.NothingMediaListenerService.setShuffleMode(com.example.services.NothingMediaListenerService.SHUFFLE_MODE_NONE)
+                                                }
+                                                1 -> {
+                                                    com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_ONE)
+                                                }
+                                                2 -> {
+                                                    com.example.services.NothingMediaListenerService.setRepeatMode(com.example.services.NothingMediaListenerService.REPEAT_MODE_ALL)
+                                                }
+                                                3 -> {
+                                                    com.example.services.NothingMediaListenerService.setShuffleMode(com.example.services.NothingMediaListenerService.SHUFFLE_MODE_ALL)
+                                                }
+                                            }
+                                        } catch (e: Exception) {}
+                                    },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = when (playMode) {
+                                            1 -> Icons.Filled.RepeatOne
+                                            2 -> Icons.Filled.Repeat
+                                            3 -> Icons.Filled.Shuffle
+                                            else -> Icons.Filled.Repeat
+                                        },
+                                        contentDescription = "Playback Mode",
+                                        tint = if (playMode == 0) cardSecText else accentColor,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
                             Text(
                                 text = mediaState.artist,
-                                color = Color.Gray,
+                                color = cardSecText,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 maxLines = 1
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(
-                                progress = { if (isPlaying) 0.5f else 0.2f },
-                                color = accentColor,
-                                trackColor = Color.White.copy(alpha = 0.1f),
+                            
+                            // Interactive/Functional Seekable Progress Bar
+                            BoxWithConstraints(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.9f)
-                                    .height(2.dp)
-                                    .clip(RoundedCornerShape(1.dp))
-                            )
+                                    .fillMaxWidth(0.92f)
+                                    .height(18.dp)
+                                    .pointerInput(duration) {
+                                        detectTapGestures { offset ->
+                                            val fraction = (offset.x / this.size.width.toFloat()).coerceIn(0f, 1f)
+                                            val newPos = (fraction * duration).toLong()
+                                            currentPosition = newPos
+                                            try {
+                                                com.example.services.NothingMediaListenerService.activeController?.transportControls?.seekTo(newPos)
+                                            } catch (e: Exception) {}
+                                        }
+                                    },
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                val widthPx = constraints.maxWidth.toFloat()
+                                val fraction = (currentPosition.toFloat() / duration).coerceIn(0f, 1f)
+                                
+                                // Background Track
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(1.5.dp))
+                                        .background(cardText.copy(alpha = 0.15f))
+                                )
+                                
+                                // Foreground progress
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction)
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(1.5.dp))
+                                        .background(accentColor)
+                                )
+                                
+                                // Mini knob (Nothing style small dot)
+                                val knobOffset = with(LocalDensity.current) { (fraction * widthPx).toDp() }
+                                Box(
+                                    modifier = Modifier
+                                        .offset(x = knobOffset - 4.dp)
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(accentColor)
+                                )
+                            }
                         }
 
                         Row(
@@ -2291,19 +2469,19 @@ fun NothingMusicWidget(
                                 onClick = { onPrevious() },
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(Icons.Filled.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.SkipPrevious, null, tint = cardText, modifier = Modifier.size(20.dp))
                             }
                             IconButton(
                                 onClick = { onTogglePlay() },
                                 modifier = Modifier
                                     .size(48.dp)
-                                    .background(Color.White.copy(alpha = 0.05f), CircleShape)
-                                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                                    .background(cardText.copy(alpha = 0.05f), CircleShape)
+                                    .border(1.dp, cardBorderColor, CircleShape)
                             ) {
                                 Icon(
                                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = cardText,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -2311,7 +2489,7 @@ fun NothingMusicWidget(
                                 onClick = { onNext() },
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.SkipNext, null, tint = cardText, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -2349,10 +2527,12 @@ fun NothingFitnessWidget(
                 onClick = { if (!hasPermission) onRequestPermission() },
                 onLongClick = { onLongClick?.invoke() }
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.08f))
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
     ) {
+        val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+        val cardSecondaryTextColor = com.example.ui.theme.LocalCardSecondaryTextColor.current
         if (!hasPermission) {
             Box(
                 modifier = Modifier
@@ -2363,9 +2543,9 @@ fun NothingFitnessWidget(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "STEP TRACKER",
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = if (size == "small") 11.sp else 13.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -2374,7 +2554,7 @@ fun NothingFitnessWidget(
                         text = "TAP TO ENABLE TRACKING",
                         color = accentColor,
                         fontSize = if (size == "small") 8.sp else 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         textAlign = TextAlign.Center
@@ -2400,16 +2580,16 @@ fun NothingFitnessWidget(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${String.format(Locale.US, "%.1fk", stepCount / 1000f)}",
-                        color = Color.White,
+                        color = cardTextColor,
                         fontSize = 18.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "STEPS",
-                        color = Color.Gray,
+                        color = cardSecondaryTextColor,
                         fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -2423,9 +2603,9 @@ fun NothingFitnessWidget(
                 ) {
                     Text(
                         text = "FITNESS ACTIVITY",
-                        color = Color.Gray,
+                        color = cardSecondaryTextColor,
                         fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = com.example.ui.theme.LocalAppFont.current,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp
                     )
@@ -2438,16 +2618,16 @@ fun NothingFitnessWidget(
                         Column {
                             Text(
                                 text = "$stepCount / $targetSteps",
-                                color = Color.White,
+                                color = cardTextColor,
                                 fontSize = 22.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "DAILY STEPS",
-                                color = Color.Gray,
+                                color = cardSecondaryTextColor,
                                 fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = com.example.ui.theme.LocalAppFont.current
                             )
                         }
 
@@ -2457,7 +2637,7 @@ fun NothingFitnessWidget(
                         ) {
                             Canvas(modifier = Modifier.fillMaxSize()) {
                                 drawCircle(
-                                    color = Color.White.copy(alpha = 0.05f),
+                                    color = cardTextColor.copy(alpha = 0.05f),
                                     style = Stroke(width = 6f)
                                 )
                                 drawArc(
@@ -2470,9 +2650,9 @@ fun NothingFitnessWidget(
                             }
                             Text(
                                 text = "${(progressPercent * 100).toInt()}%",
-                                color = Color.White,
+                                color = cardTextColor,
                                 fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = com.example.ui.theme.LocalAppFont.current,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -2483,16 +2663,16 @@ fun NothingFitnessWidget(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = distanceKm, color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                            Text(text = "DISTANCE", color = Color.Gray, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                            Text(text = distanceKm, color = cardTextColor, fontSize = 12.sp, fontFamily = com.example.ui.theme.LocalAppFont.current, fontWeight = FontWeight.Bold)
+                            Text(text = "DISTANCE", color = cardSecondaryTextColor, fontSize = 9.sp, fontFamily = com.example.ui.theme.LocalAppFont.current)
                         }
                         Column {
-                            Text(text = caloriesKcal, color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                            Text(text = "CALORIES", color = Color.Gray, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                            Text(text = caloriesKcal, color = cardTextColor, fontSize = 12.sp, fontFamily = com.example.ui.theme.LocalAppFont.current, fontWeight = FontWeight.Bold)
+                            Text(text = "CALORIES", color = cardSecondaryTextColor, fontSize = 9.sp, fontFamily = com.example.ui.theme.LocalAppFont.current)
                         }
                         Column {
-                            Text(text = "48 min", color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                            Text(text = "ACTIVE", color = Color.Gray, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                            Text(text = "48 min", color = cardTextColor, fontSize = 12.sp, fontFamily = com.example.ui.theme.LocalAppFont.current, fontWeight = FontWeight.Bold)
+                            Text(text = "ACTIVE", color = cardSecondaryTextColor, fontSize = 9.sp, fontFamily = com.example.ui.theme.LocalAppFont.current)
                         }
                     }
                 }
@@ -2511,17 +2691,17 @@ fun NothingFitnessWidget(
                     ) {
                         Text(
                             text = "$stepCount STEPS",
-                            color = Color.White,
+                            color = cardTextColor,
                             fontSize = 16.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = com.example.ui.theme.LocalAppFont.current,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "$distanceKm • $caloriesKcal",
-                            color = Color.Gray,
+                            color = cardSecondaryTextColor,
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = com.example.ui.theme.LocalAppFont.current
                         )
                     }
 
@@ -2531,7 +2711,7 @@ fun NothingFitnessWidget(
                     ) {
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             drawCircle(
-                                color = Color.White.copy(alpha = 0.05f),
+                                color = cardTextColor.copy(alpha = 0.05f),
                                 style = Stroke(width = 5f)
                             )
                             drawArc(
@@ -2545,7 +2725,7 @@ fun NothingFitnessWidget(
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = cardTextColor,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -2555,3 +2735,221 @@ fun NothingFitnessWidget(
         }
     }
 }
+
+// --- WIDGET 9: NOTHING TO-DO ---
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun NothingTodoWidget(
+    size: String = "medium",
+    heightScale: Float = 1.0f,
+    todoItems: List<com.example.data.TodoEntity>,
+    onAddTodo: (String) -> Unit,
+    onToggleTodo: (com.example.data.TodoEntity) -> Unit,
+    onDeleteTodo: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null
+) {
+    var isAdding by remember { mutableStateOf(false) }
+    var todoText by remember { mutableStateOf("") }
+    
+    val defaultHeight = if (size == "small") 110.dp else if (size == "large") 240.dp else 170.dp
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(defaultHeight * heightScale)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { onLongClick?.invoke() }
+            ),
+        colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.LocalCardBackgroundColor.current),
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.5.dp, com.example.ui.theme.LocalCardBorderColor.current)
+    ) {
+        val cardTextColor = com.example.ui.theme.LocalCardTextColor.current
+        val cardSecondaryTextColor = com.example.ui.theme.LocalCardSecondaryTextColor.current
+        val accentColor = com.example.ui.theme.LocalAccentColor.current
+        val appFont = com.example.ui.theme.LocalAppFont.current
+        
+        Column(
+            modifier = Modifier
+                .padding(if (size == "small") 12.dp else 18.dp)
+                .fillMaxSize()
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "TO-DO LIST",
+                    color = cardSecondaryTextColor,
+                    fontSize = 11.sp,
+                    fontFamily = appFont,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp
+                )
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isAdding) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = "Save Todo",
+                            tint = accentColor,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable {
+                                    if (todoText.isNotBlank()) {
+                                        onAddTodo(todoText.trim())
+                                        todoText = ""
+                                    }
+                                    isAdding = false
+                                }
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Cancel",
+                            tint = cardTextColor.copy(alpha = 0.5f),
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable {
+                                    todoText = ""
+                                    isAdding = false
+                                }
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add Todo",
+                            tint = cardTextColor,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable {
+                                    isAdding = true
+                                }
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (isAdding) {
+                // Quick add item text input
+                BasicTextField(
+                    value = todoText,
+                    onValueChange = { todoText = it },
+                    textStyle = TextStyle(
+                        color = cardTextColor,
+                        fontSize = 13.sp,
+                        fontFamily = appFont
+                    ),
+                    cursorBrush = SolidColor(accentColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(cardTextColor.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                        .padding(8.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (todoText.isNotBlank()) {
+                                onAddTodo(todoText.trim())
+                                todoText = ""
+                            }
+                            isAdding = false
+                        }
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            if (todoItems.isEmpty()) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "NO TASKS",
+                        color = cardSecondaryTextColor.copy(alpha = 0.5f),
+                        fontSize = 11.sp,
+                        fontFamily = appFont,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(todoItems) { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(cardTextColor.copy(alpha = 0.02f))
+                                .clickable { onToggleTodo(item) }
+                                .padding(vertical = 6.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                // Custom Checkbox
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .border(
+                                            1.5.dp,
+                                            if (item.isCompleted) accentColor else cardTextColor.copy(alpha = 0.4f),
+                                            CircleShape
+                                        )
+                                        .background(
+                                            if (item.isCompleted) accentColor.copy(alpha = 0.15f) else Color.Transparent,
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (item.isCompleted) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(accentColor, CircleShape)
+                                        )
+                                    }
+                                }
+                                
+                                Text(
+                                    text = item.title,
+                                    color = if (item.isCompleted) cardTextColor.copy(alpha = 0.4f) else cardTextColor,
+                                    fontSize = 12.sp,
+                                    fontFamily = appFont,
+                                    textDecoration = if (item.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                    maxLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Delete Todo",
+                                tint = cardSecondaryTextColor.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable { onDeleteTodo(item.id) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

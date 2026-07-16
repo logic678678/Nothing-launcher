@@ -38,7 +38,7 @@ import java.io.File
 import androidx.compose.ui.platform.LocalContext
 
 enum class LauncherScreen {
-    HOME, DRAWER, SETTINGS
+    HOME, DRAWER, SETTINGS, UTILITY
 }
 
 class MainActivity : ComponentActivity() {
@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
             val fontSetting = settingsMap["app_font"] ?: "mono"
             val appFont = com.example.ui.theme.getAppFontFamily(fontSetting)
 
-            MyApplicationTheme(darkTheme = darkTheme, dynamicColor = false) {
+            MyApplicationTheme(darkTheme = darkTheme, dynamicColor = false, appFont = appFont) {
                 CompositionLocalProvider(
                     com.example.ui.theme.LocalAccentColor provides com.example.ui.theme.getAccentColor(settingsMap),
                     com.example.ui.theme.LocalAppFont provides appFont,
@@ -233,6 +233,14 @@ class MainActivity : ComponentActivity() {
                                             } else if (currentScreen == LauncherScreen.DRAWER && dragAmount.y > 15f) {
                                                 // Swipe DOWN inside Drawer returns Home
                                                 currentScreen = LauncherScreen.HOME
+                                            } else if ((settingsMap["gesture_navigation_enabled"] ?: "true") == "true") {
+                                                if (currentScreen == LauncherScreen.HOME && dragAmount.x > 30f) {
+                                                    // Swipe RIGHT opens Utility Hub
+                                                    currentScreen = LauncherScreen.UTILITY
+                                                } else if (currentScreen == LauncherScreen.HOME && dragAmount.x < -30f) {
+                                                    // Swipe LEFT opens Settings
+                                                    currentScreen = LauncherScreen.SETTINGS
+                                                }
                                             }
                                         }
                                     }
@@ -248,6 +256,15 @@ class MainActivity : ComponentActivity() {
                                         ) togetherWith slideOutVertically(
                                             targetOffsetY = { if (targetState == LauncherScreen.HOME) it else -it },
                                             animationSpec = tween(300)
+                                        )
+                                    } else if (targetState == LauncherScreen.UTILITY || initialState == LauncherScreen.UTILITY) {
+                                        // Slide left/right for utility hub
+                                        slideInHorizontally(
+                                            initialOffsetX = { if (targetState == LauncherScreen.UTILITY) it else -it },
+                                            animationSpec = tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                        ) togetherWith slideOutHorizontally(
+                                            targetOffsetX = { if (targetState == LauncherScreen.HOME) it else -it },
+                                            animationSpec = tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                                         )
                                     } else {
                                         // Fade transition for settings
@@ -272,6 +289,12 @@ class MainActivity : ComponentActivity() {
                                     }
                                     LauncherScreen.SETTINGS -> {
                                         SettingsScreen(
+                                            viewModel = viewModel,
+                                            onBack = { currentScreen = LauncherScreen.HOME }
+                                        )
+                                    }
+                                    LauncherScreen.UTILITY -> {
+                                        com.example.ui.screens.UtilityScreen(
                                             viewModel = viewModel,
                                             onBack = { currentScreen = LauncherScreen.HOME }
                                         )

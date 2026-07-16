@@ -96,6 +96,9 @@ class LauncherViewModel(private val repository: LauncherRepository) : ViewModel(
         .map { it?.content ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val todoItems: StateFlow<List<com.example.data.TodoEntity>> = repository.todoItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Launcher Settings Flow loaded as a Map for reactive UI toggles
     private val _settingsMap = MutableStateFlow<Map<String, String>>(emptyMap())
     val settingsMap: StateFlow<Map<String, String>> = _settingsMap.asStateFlow()
@@ -117,7 +120,15 @@ class LauncherViewModel(private val repository: LauncherRepository) : ViewModel(
                 // Pre-warm the icon cache in background thread
                 for (app in list) {
                     try {
+                        val iconDrawable = context.packageManager.getApplicationIcon(app.packageName)
+                        val isAdaptive = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && 
+                                iconDrawable is android.graphics.drawable.AdaptiveIconDrawable
+                        AppIconProcessor.adaptiveAppsMap[app.packageName] = isAdaptive
+                        
                         AppIconProcessor.getAppIcon(context, app.packageName)
+                        if (isAdaptive) {
+                            AppIconProcessor.getAppIconForeground(context, app.packageName)
+                        }
                     } catch (e: Exception) {
                         Log.e("LauncherViewModel", "Failed to pre-warm icon for ${app.packageName}", e)
                     }
@@ -274,6 +285,30 @@ class LauncherViewModel(private val repository: LauncherRepository) : ViewModel(
     fun saveQuickNote(content: String) {
         viewModelScope.launch {
             repository.saveQuickNote(content)
+        }
+    }
+
+    fun addTodoItem(title: String) {
+        viewModelScope.launch {
+            repository.saveTodoItem(com.example.data.TodoEntity(title = title))
+        }
+    }
+
+    fun toggleTodoItem(item: com.example.data.TodoEntity) {
+        viewModelScope.launch {
+            repository.saveTodoItem(item.copy(isCompleted = !item.isCompleted))
+        }
+    }
+
+    fun deleteTodoItem(id: Long) {
+        viewModelScope.launch {
+            repository.deleteTodoItem(id)
+        }
+    }
+
+    fun clearCompletedTodoItems() {
+        viewModelScope.launch {
+            repository.clearCompletedTodoItems()
         }
     }
 

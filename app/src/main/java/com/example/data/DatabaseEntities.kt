@@ -28,3 +28,12 @@ data class SettingEntity(
     @PrimaryKey val key: String,
     val value: String
 )
+
+@Entity(tableName = "todo_items")
+data class TodoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val isCompleted: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
